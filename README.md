@@ -2,6 +2,8 @@
 
 An interactive 3D playground that shows how common machine-learning optimizers move across a loss surface. Eight optimizers start from the same point on the same terrain, and you can watch where each update rule takes them.
 
+**Try it live: https://williambudi.github.io/optimizer-viz/**
+
 **Optimizers:** SGD, Momentum, Nesterov, AdaGrad, RMSProp, Adam, AdamW, Lion
 
 **Surfaces:**
@@ -25,7 +27,7 @@ An interactive 3D playground that shows how common machine-learning optimizers m
 
 ## Run it
 
-Open `index.html` in a browser. It is a single self-contained file; three.js loads from cdnjs.
+Open the live version at https://williambudi.github.io/optimizer-viz/, or open `index.html` locally in a browser. It is a single self-contained file; three.js loads from cdnjs.
 
 ## Project layout
 
