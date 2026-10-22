@@ -1,0 +1,153 @@
+<title>Descent Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&family=STIX+Two+Text:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a relief model on a bench. The 3D loss terrain is the single bold element; roster and inspector sit quietly to its right. Left-aligned throughout. */
+:root {
+  --bg: #e4e8e6; --panel: #f3f5f4; --ink: #17232b; --muted: #5a6870; --line: #c9d1cf; --accent: #0f5563;
+  --t-low: #0f5563; --t-mid: #6ea89e; --t-high: #f1f3ef; --t-line: #17232b;
+  --c-sgd: #d23f2a; --c-momentum: #e08a12; --c-nesterov: #8b55d8; --c-adagrad: #2a73c9; --c-rmsprop: #1c9358; --c-adam: #cf3486; --c-adamw: #9a7408; --c-lion: #0a8f9c;
+  --ui: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --math: "STIX Two Text", "Cambria Math", Cambria, Georgia, serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10171b; --panel: #172026; --ink: #e2e9ec; --muted: #8e9ca4; --line: #27343c; --accent: #5cc0c4;
+  --t-low: #3fb3b0; --t-mid: #1f4d55; --t-high: #26323a; --t-line: #e2e9ec;
+  --c-sgd: #ff6b52; --c-momentum: #ffad3d; --c-nesterov: #b68bff; --c-adagrad: #5ea8ff; --c-rmsprop: #4dd68e; --c-adam: #ff6fb6; --c-adamw: #f2cf4b; --c-lion: #53e1e6;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10171b; --panel: #172026; --ink: #e2e9ec; --muted: #8e9ca4; --line: #27343c; --accent: #5cc0c4;
+  --t-low: #3fb3b0; --t-mid: #1f4d55; --t-high: #26323a; --t-line: #e2e9ec;
+  --c-sgd: #ff6b52; --c-momentum: #ffad3d; --c-nesterov: #b68bff; --c-adagrad: #5ea8ff; --c-rmsprop: #4dd68e; --c-adam: #ff6fb6; --c-adamw: #f2cf4b; --c-lion: #53e1e6;
+  color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--ui) }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 44px; display: grid; gap: 22px }
+header { display: grid; gap: 16px }
+h1 { font: 800 clamp(32px, 4.6vw, 52px)/0.95 var(--ui); letter-spacing: -0.035em; margin: 0 }
+.lede { color: var(--muted); margin: 0; max-width: 60ch; font-size: 16px }
+.tabs { display: flex; gap: 4px 22px; overflow-x: auto; border-bottom: 1px solid var(--line) }
+.tab { flex: 0 0 auto; border: 0; background: none; color: var(--muted); padding: 6px 0 10px; text-align: left; cursor: pointer; font: inherit; display: grid; gap: 0; border-bottom: 2px solid transparent; margin-bottom: -1px }
+.tab b { font: 600 15px/1.25 var(--ui); color: var(--ink) }
+.tab span { font: 13px/1.25 var(--ui) }
+.tab[aria-selected="true"] { border-bottom-color: var(--ink) }
+.tab:not([aria-selected="true"]) b { color: var(--muted) }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: start }
+@media (max-width: 980px) { .bench { grid-template-columns: minmax(0, 1fr) } }
+.stage { display: grid; gap: 14px; min-width: 0 }
+.terrain { position: relative; border-radius: 14px; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, var(--panel), var(--bg)); border: 1px solid var(--line) }
+#field { display: block; width: 100%; aspect-ratio: 16 / 10; cursor: grab; touch-action: none }
+#field.dragging { cursor: grabbing }
+.ov { position: absolute; pointer-events: none; color: var(--ink) }
+.formula { left: 16px; top: 14px; font: italic 19px/1.2 var(--math) }
+.views { right: 12px; top: 12px; display: flex; gap: 4px; pointer-events: auto }
+.views button { font: 500 13px/1 var(--ui); border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 7px 10px; border-radius: 7px; cursor: pointer }
+.views button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.readout { left: 16px; bottom: 12px; font: 15px/1.2 var(--math); font-variant-numeric: tabular-nums lining-nums }
+.readout i { font-style: italic; color: var(--muted) }
+.hint { right: 14px; bottom: 12px; font-size: 13px; color: var(--muted); text-align: right }
+.nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted) }
+
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 22px }
+.btns { display: flex; gap: 6px }
+.btn { font: 600 14px/1 var(--ui); border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 10px 15px; border-radius: 9px; cursor: pointer }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); min-width: 88px }
+.slider { display: grid; gap: 3px; font-size: 13px; color: var(--muted) }
+.slider label { display: flex; justify-content: space-between; gap: 12px }
+.slider output { font: 15px/1 var(--math); color: var(--ink); font-variant-numeric: tabular-nums lining-nums }
+.slider input { width: 160px; accent-color: var(--accent) }
+.stepcount { margin-left: auto; font: 16px var(--math); color: var(--muted); font-variant-numeric: tabular-nums lining-nums }
+.note { margin: 0; color: var(--muted); max-width: 70ch; font-size: 15px }
+.note strong { color: var(--ink); font-weight: 600 }
+
+.lossbox { border-top: 1px solid var(--line); padding-top: 12px }
+h2 { font: 600 15px/1.2 var(--ui); margin: 0 0 8px; color: var(--ink) }
+h2 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px }
+#loss { display: block; width: 100%; height: 190px }
+
+.rack { display: grid; gap: 18px; min-width: 0 }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px }
+.roster { display: grid; gap: 1px }
+.rhead, .row { display: grid; grid-template-columns: 20px minmax(0,1fr) 80px 64px; gap: 8px; align-items: center }
+.rhead { font-size: 12px; color: var(--muted); padding: 0 6px 6px }
+.row { padding: 6px; border-radius: 8px; cursor: pointer }
+.row:hover { background: color-mix(in srgb, var(--line) 50%, transparent) }
+.row.sel { background: color-mix(in srgb, var(--sw) 14%, transparent) }
+.row input[type="checkbox"] { appearance: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--sw); margin: 0; cursor: pointer }
+.row input[type="checkbox"]:checked { background: var(--sw) }
+.row .nm { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .lr { width: 100%; font: 14px var(--math); border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 3px 6px; font-variant-numeric: tabular-nums lining-nums }
+.row .ls { font: 14px var(--math); text-align: right; font-variant-numeric: tabular-nums lining-nums; color: var(--muted) }
+.row .ls.dead { color: var(--c-sgd); font: 12px var(--ui) }
+.row.off .nm, .row.off .ls { opacity: .45 }
+
+.insp h3 { font: 800 26px/1 var(--ui); letter-spacing: -0.02em; margin: 0 0 8px; display: flex; align-items: center; gap: 10px }
+.insp h3 i { width: 12px; height: 12px; border-radius: 50%; background: var(--sw); display: inline-block }
+.insp p { margin: 0 0 12px; font-size: 14px; color: var(--muted) }
+.eq { font: 17px/1.65 var(--math); background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; overflow-x: auto; white-space: pre }
+.hps { font: 15px var(--math); color: var(--muted); margin-bottom: 12px }
+table.state { width: 100%; border-collapse: collapse; font: 15px var(--math); font-variant-numeric: tabular-nums lining-nums }
+table.state th { text-align: right; font: 500 12px var(--ui); color: var(--muted); padding: 4px 0 }
+table.state th:first-child { text-align: left }
+table.state td { padding: 5px 0; border-top: 1px solid var(--line); text-align: right }
+table.state td:first-child { text-align: left; color: var(--muted); font: 13px var(--ui) }
+.legendkey { display: grid; gap: 4px; font-size: 13px; color: var(--muted); margin-top: 12px }
+.legendkey span { display: inline-flex; align-items: center; gap: 8px }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Descent Lab</h1>
+    <p class="lede">Eight optimizers roll down the same loss terrain from the same starting point. Each dot is one step, so the spacing shows how far each update rule moves.</p>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Loss surface"></div>
+  </header>
+
+  <div class="bench">
+    <section class="stage">
+      <div class="terrain">
+        <canvas id="field" aria-label="3D loss surface with optimizer paths"></canvas>
+        <div class="ov formula" id="formula"></div>
+        <div class="ov views" role="group" aria-label="Camera">
+          <button id="v3d" aria-pressed="true">Relief</button>
+          <button id="vtop" aria-pressed="false">Top view</button>
+        </div>
+        <div class="ov readout" id="readout"></div>
+        <div class="ov hint">Drag to orbit, scroll to zoom.<br>Click the terrain to start from there.</div>
+      </div>
+      <div class="controls">
+        <div class="btns">
+          <button class="btn primary" id="play">Play</button>
+          <button class="btn" id="step">Step</button>
+          <button class="btn" id="reset">Reset</button>
+        </div>
+        <div class="slider"><label for="speed">Speed <output id="speedOut"></output></label><input type="range" id="speed" min="1" max="12" value="3"></div>
+        <div class="slider"><label for="noise">Gradient noise <output id="noiseOut"></output></label><input type="range" id="noise" min="0" max="100" value="0"></div>
+        <div class="stepcount" id="stepcount"></div>
+      </div>
+      <p class="note" id="note"></p>
+      <div class="lossbox">
+        <h2>Loss over steps <small>distance above the minimum, log scale</small></h2>
+        <canvas id="loss" aria-label="Loss curves"></canvas>
+      </div>
+    </section>
+
+    <aside class="rack">
+      <div class="card">
+        <h2>Optimizers</h2>
+        <div class="rhead"><span></span><span>Name</span><span>Learning rate</span><span style="text-align:right">Loss</span></div>
+        <div class="roster" id="roster"></div>
+      </div>
+      <div class="card insp" id="insp"></div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/*CORE*/
+/*APP*/
+</script>
